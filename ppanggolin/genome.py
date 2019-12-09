@@ -2,10 +2,17 @@
 #coding: utf8
 
 class Feature:
-    def __init__(self, ID):
-        self.ID = ID
+    def __init__(self, ID = None):
         self.is_fragment = False
         self.type = ""
+        self._id = ID
+    
+    @property
+    def ID(self):
+        if self._id is not None:
+            return self._id
+        else:
+            return id(self)
 
     def fill_annotations(self, start, stop, strand, geneType = "", name = "", product="", local_identifier = "", position = None, genetic_code = 11):
         #genetic code, and position are not used in the default function.
@@ -30,8 +37,8 @@ class RNA(Feature):
     pass
 
 class Gene(Feature):
-    def __init__(self, ID):
-        super().__init__(ID)
+    def __init__(self, ID = None):
+        super().__init__(ID = ID)
         self.position = None
         self.family = None
 

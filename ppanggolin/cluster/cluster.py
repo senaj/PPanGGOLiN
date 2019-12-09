@@ -137,9 +137,9 @@ def read_gene2fam(pangenome, gene2fam):
     for gene, (family, is_frag) in bar:
         fam = pangenome.addGeneFamily(family)
         if link:#doing the linking if the annotations are loaded.
-            geneObj = pangenome.getGene(gene)
+            geneObj = pangenome.getGene(int(gene))
         else:
-            geneObj = Gene(gene)
+            geneObj = Gene()
         geneObj.is_fragment = is_frag
         fam.addGene(geneObj)
     bar.close()
@@ -159,7 +159,7 @@ def writeGeneSequencesFromAnnotations(pangenome, fileObj):
     bar =  tqdm(pangenome.genes, unit="gene")
     for gene in bar:
         if gene.type == "CDS":
-            fileObj.write('>' + gene.ID + "\n")
+            fileObj.write(f'>{gene.ID}\n')
             fileObj.write(gene.dna + "\n")
     fileObj.flush()
     bar.close()

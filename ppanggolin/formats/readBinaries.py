@@ -72,9 +72,9 @@ def getGeneSequencesFromFile(pangenome, fileObj, list_CDS=None):
     bar =  tqdm(range(table.nrows), unit="gene")
     list_CDS=set(list_CDS) if list_CDS is not None else None
     for row in read_chunks(table, chunk = 20000):#reading the table chunk per chunk otherwise RAM dies on big pangenomes
-        nameCDS = row["gene"].decode()
+        nameCDS = row["gene"]
         if row["type"] == b"CDS" and (list_CDS is None or nameCDS in list_CDS):
-            fileObj.write('>' + nameCDS + "\n")
+            fileObj.write(f'>{nameCDS}\n')
             fileObj.write(row["dna"].decode() + "\n")
         bar.update()
     fileObj.flush()
@@ -90,13 +90,13 @@ def readOrganism(pangenome, orgName, contigDict, link = False):
         contig = org.getOrAddContig(contigName, is_circular=geneList[0][0][0])
         for row in geneList:
             if link:#if the gene families are already computed/loaded the gene exists.
-                gene = pangenome.getGene(row["ID"].decode())
+                gene = pangenome.getGene(row["ID"])
             else:#else creating the gene.
                 gene_type = row["type"].decode()
                 if gene_type == "CDS":
-                    gene = Gene(row["ID"].decode())
+                    gene = Gene(row["ID"])
                 elif "RNA" in gene_type:
-                    gene = RNA(row["ID"].decode())
+                    gene = RNA(row["ID"])
             try:
                 local = row["local"].decode()
             except ValueError:
@@ -128,8 +128,8 @@ def readGraph(pangenome, h5f):
         raise Exception("It's not possible to read the graph if the annotations and the gene families have not been loaded.")
     bar = tqdm(range(table.nrows), unit = "contig adjacency")
     for row in read_chunks(table):
-        source = pangenome.getGene(row["geneSource"].decode())
-        target = pangenome.getGene(row["geneTarget"].decode())
+        source = pangenome.getGene(row["geneSource"])
+        target = pangenome.getGene(row["geneTarget"])
         pangenome.addEdge(source, target)
         bar.update()
     bar.close()
@@ -144,9 +144,9 @@ def readGeneFamilies(pangenome, h5f):
     for row in read_chunks(table):
         fam = pangenome.addGeneFamily(row["geneFam"].decode())
         if link:#linking if we have loaded the annotations
-            geneObj = pangenome.getGene(row["gene"].decode())
+            geneObj = pangenome.getGene(row["gene"])
         else:#else, no
-            geneObj = Gene(row["gene"].decode())
+            geneObj = Gene(row["gene"])
         fam.addGene(geneObj)
         bar.update()
     bar.close()

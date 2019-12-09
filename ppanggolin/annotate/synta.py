@@ -28,7 +28,6 @@ def launch_aragorn(fnaFile, org):
         launches Aragorn to annotate tRNAs. Takes a fna file name and a locustag to give an ID to the found genes.
         returns the annotated genes in a list of gene objects.
     """
-    locustag = org.name
     cmd = ["aragorn", "-t", "-gcbact", "-l", "-w", fnaFile]
     p = Popen(cmd, stdout=PIPE)
     # loading the whole thing, reverting it to 'pop' in order.
@@ -44,7 +43,7 @@ def launch_aragorn(fnaFile, org):
             lineData = line.split()
             start, stop = ast.literal_eval(lineData[2].replace("c", ""))
             c += 1
-            gene = RNA(ID = locustag+'_tRNA_'+str(c).zfill(3))
+            gene = RNA()
             gene.fill_annotations(start=start,
                                  stop=stop,
                                  strand="-" if lineData[2].startswith(
@@ -59,7 +58,6 @@ def launch_prodigal(fnaFile, org, code):
         launches Prodigal to annotate CDS. Takes a fna file name and a locustag to give an ID to the found genes.
         returns the annotated genes in a list of gene objects.
     """
-    locustag = org.name
     cmd = ["prodigal", "-f", "sco","-g",code, "-m", "-c", "-i", fnaFile, "-p", "single", "-q"]
     p = Popen(cmd, stdout=PIPE)
 
@@ -75,7 +73,7 @@ def launch_prodigal(fnaFile, org, code):
         elif line.startswith(">"):
             c += 1
             lineData = line[1:].split("_")  # not considering the '>'
-            gene = Gene(ID = locustag + "_CDS_" + str(c).zfill(4))
+            gene = Gene()
             gene.fill_annotations(start=lineData[1],
                                  stop=lineData[2],
                                  strand=lineData[3],
@@ -90,7 +88,6 @@ def launch_infernal(fnaFile, org, kingdom, tmpdir):
         launches Infernal in hmmer-only mode to annotate rRNAs. Takes a fna file name and a locustag to give an ID to the found genes.
         returns the annotated genes in a list of gene objects.
     """
-    locustag = org.name
     if kingdom == "bacteria":
         modelfile = os.path.dirname(os.path.realpath(__file__)) + "/rRNA_DB/rRNA_bact.cm"
     elif kingdom == "archaea":
@@ -119,7 +116,7 @@ def launch_infernal(fnaFile, org, kingdom, tmpdir):
             else:
                 start = lineData[7]
                 stop = lineData[8]
-            gene = RNA(ID = locustag + "_rRNA_" + str(c).zfill(3))
+            gene = RNA()
             gene.fill_annotations(start=start,
                                  stop=stop,
                                  strand=strand,

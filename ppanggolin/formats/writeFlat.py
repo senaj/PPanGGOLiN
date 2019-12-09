@@ -64,7 +64,7 @@ def writeJSONGeneFam(geneFam, json):
                 contigstr.append('"' + contig.name + '": {')
                 genestr = []
                 for gene in orgDict[org][contig]:
-                    identifier = gene.ID if gene.local_identifier == "" else gene.local_identifier
+                    identifier = str(gene.ID) if gene.local_identifier == "" else gene.local_identifier
                     genestr.append('"' + identifier + '": {' + f'"name": "{gene.name}", "product": "{gene.product}", "is_fragment": {"true" if gene.is_fragment else "false"}, "position": {gene.position}, "strand": "{gene.strand}", "end": {gene.stop}, "start": {gene.start}'+'}')
                 contigstr[-1] += ", ".join(genestr) + "}"
             orgstr[-1] += ", ".join(contigstr) + "}"
@@ -89,7 +89,7 @@ def writeJSONedge(edge, json):
         orgstr.append('"' + org.name + '": [')
         genepairstr = []
         for genepair in  edge.getOrgDict()[org]:
-            genepairstr.append('{"source": "' + genepair[0].ID + '", "target": "' + genepair[1].ID + f'", "length": {genepair[0].start - genepair[1].stop}' + '}')
+            genepairstr.append('{"source": "' + str(genepair[0].ID) + '", "target": "' + str(genepair[1].ID) + f'", "length": {genepair[0].start - genepair[1].stop}' + '}')
         orgstr[-1] += ', '.join(genepairstr) + ']'
     json.write(', '.join(orgstr) + "}}")
 
@@ -179,7 +179,7 @@ def writeGEXFnodes(gexf, light, soft_core = 0.95):
         gexf.write(f'          <attvalue for="10" value="{len(fam.organisms)}" />\n')
         if not light:
             for org, genes in fam.getOrgDict().items():
-                gexf.write(f'          <attvalue for="{index[org]+12}" value="{"|".join([ gene.ID if gene.local_identifier == "" else gene.local_identifier for gene in genes])}" />\n')
+                gexf.write(f'          <attvalue for="{index[org]+12}" value="{"|".join([ str(gene.ID) if gene.local_identifier == "" else gene.local_identifier for gene in genes])}" />\n')
         gexf.write(f'        </attvalues>\n')
         gexf.write(f'      </node>\n')
     gexf.write('    </nodes>\n')
@@ -461,7 +461,7 @@ def writeGeneFamiliesTSV(output, compress=False):
     with write_compressed_or_not(outname,compress) as tsv:
         for fam in pan.geneFamilies:
             for gene in fam.genes:
-            	tsv.write("\t".join([fam.name, gene.ID if gene.local_identifier == "" else gene.local_identifier])+"\n")
+                tsv.write("\t".join([fam.name, str(gene.ID) if gene.local_identifier == "" else gene.local_identifier])+"\n")
     logging.getLogger().info(f"Done writing the file providing the association between genes and gene families : '{outname}'")
 def writeFastaGenFam(output, compress=False):
     logging.getLogger().info("Writing the representative nucleic sequences of all the gene families...")
