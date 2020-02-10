@@ -27,7 +27,7 @@ import nem_stats
 pan = None
 samples = []
 
-def run_partitioning(nem_dir_path, nb_org, beta, free_dispersion, K = 3, seed = 42, init="param_file", keep_files = False, itermax=100, just_log_likelihood=False):
+def run_partitioning(nem_dir_path, nb_org, beta, free_dispersion, K = 3, seed = 42, init="param_file", keep_files = False, itermax=100, just_log_likelihood=False, unique_families = set()):
     logging.getLogger().debug("run_partitioning...")
     if init=="param_file":
         with open(nem_dir_path+"/nem_file_init_"+str(K)+".m", "w") as m_file:
@@ -106,7 +106,10 @@ def run_partitioning(nem_dir_path, nb_org, beta, free_dispersion, K = 3, seed = 
         for line in index_nem_file:
             index_fam.append(line.split("\t")[1].strip())
 
-    partitions_list = ["U"] * len(index_fam)
+    partitions_list = ["U"] * (len(index_fam))
+    if len(unique_families) > 0:
+        partitions_list.extend( ["C"] * len(unique_families))
+        index_fam.extend(unique_families)
     all_parameters  = {}
     log_likelihood = None
     entropy         = None
@@ -179,8 +182,8 @@ def nemSingle(args):
 def partition_nem(index, tmpdir, beta, sm_degree, free_dispersion, K, seed, init, keep_tmp_files):
     currtmpdir = tmpdir + "/" +str(index)#unique directory name
     samp = samples[index]#org_samples accessible because it is a global variable.
-    edges_weight, nb_fam = write_nem_input_files(tmpdir=currtmpdir, organisms=samp, sm_degree = sm_degree)
-    return run_partitioning( currtmpdir, len(samp), beta * (nb_fam/edges_weight), free_dispersion, K = K, seed = seed, init = init, keep_files = keep_tmp_files)
+    edges_weight, nb_fam, uniq_fams = write_nem_input_files(tmpdir=currtmpdir, organisms=samp, sm_degree = sm_degree)
+    return run_partitioning( currtmpdir, len(samp), beta * (nb_fam/edges_weight), free_dispersion, K = K, seed = seed, init = init, keep_files = keep_tmp_files, unique_families = uniq_fams)
 
 def nemSamples(pack):
     #run partitionning
@@ -196,6 +199,7 @@ def write_nem_input_files( tmpdir, organisms, sm_degree):
 
 
     logging.getLogger().debug("Writing nem_file.str nem_file.index nem_file.nei and nem_file.dat files")
+    start = time.time()
     with open(tmpdir+"/nem_file.str", "w") as str_file,\
         open(tmpdir+"/nem_file.index", "w") as index_file,\
         open(tmpdir+"/nem_file.nei", "w") as nei_file,\
@@ -206,6 +210,10 @@ def write_nem_input_files( tmpdir, organisms, sm_degree):
 
         index_org = {}
         default_dat = []
+        nb_uniq = 0
+        nb_tot = 0
+
+        uniq_fams = set()
         for index, org in enumerate(organisms):
             default_dat.append('0')
             index_org[org] = index
@@ -214,11 +222,23 @@ def write_nem_input_files( tmpdir, organisms, sm_degree):
             if not organisms.isdisjoint(fam.organisms):
                 currDat = list(default_dat)
                 curr_orgs = fam.organisms & organisms
+                if len(curr_orgs) == 1:#the family is present only once.
+                    nb_uniq+=1
+                    uniq_fams.add(fam)
+                    continue
+                else:
+                    nb_tot+=1
                 for org in curr_orgs:
                     currDat[index_org[org]] = "1"
                 dat_file.write("\t".join(currDat) + "\n")
                 index_fam[fam] = len(index_fam) +1
                 index_file.write(f"{len(index_fam)}\t{fam.name}\n")
+
+        def checkEdgeUnicity(fam, edge, uniq_fams):
+            if fam == edge.source:
+                return edge.target in uniq_fams
+            elif fam == edge.target:
+                return edge.source in uniq_fams
 
         for fam in index_fam.keys():
             row_fam = []
@@ -226,6 +246,8 @@ def write_nem_input_files( tmpdir, organisms, sm_degree):
             neighbor_number = 0
             sum_dist_score = 0
             for edge in fam.edges:#iter on the family's edges.
+                if checkEdgeUnicity(fam, edge, uniq_fams):#if the other family was present once, ignore the edge
+                    continue
                 coverage = sum([ len(gene_list) for org, gene_list in edge.organisms.items() if org in organisms ])
                 if coverage == 0:
                     continue#nothing interesting to write, this edge does not exist with this subset of organisms.
@@ -241,7 +263,9 @@ def write_nem_input_files( tmpdir, organisms, sm_degree):
                 nei_file.write(str(index_fam[fam]) + "\t0\n")
 
         str_file.write("S\t"+str(len(index_fam))+"\t"+str(len(organisms))+"\n")
-    return total_edges_weight/2, len(index_fam)
+    logging.getLogger().debug(f"Done writing input files in {round(time.time() - start,2)} seconds.")
+    logging.getLogger().debug(f"There was {nb_uniq} families out of {nb_tot} present only once")
+    return total_edges_weight/2, len(index_fam), [fam.name for fam in uniq_fams]
 
 def evaluate_nb_partitions(organisms, sm_degree, free_dispersion, chunk_size, Krange, ICL_margin, draw_ICL, cpu, tmpdir, seed, outputdir):
     Newtmpdir = tmpdir + "/eval_partitions"
@@ -251,11 +275,11 @@ def evaluate_nb_partitions(organisms, sm_degree, free_dispersion, chunk_size, Kr
     else:
         select_organisms = set(organisms)
 
-    _, nb_fam = write_nem_input_files( Newtmpdir, select_organisms, sm_degree)
+    _, nb_fam, uniq_fams = write_nem_input_files( Newtmpdir, select_organisms, sm_degree)
     max_icl_K      = 0
     argsPartitionning = []
     for k in range(Krange[0]-1, Krange[1]+1):
-        argsPartitionning.append((Newtmpdir, len(select_organisms), 0, free_dispersion, k, seed, "param_file", True, 10, True))#those arguments follow the order of the arguments of run_partitionning
+        argsPartitionning.append((Newtmpdir, len(select_organisms), 0, free_dispersion, k, seed, "param_file", True, 10, True, uniq_fams))#those arguments follow the order of the arguments of run_partitionning
     allLogLikelihood = []
 
     if cpu > 1:
@@ -421,8 +445,8 @@ def partition(pangenome, tmpdir, outputdir = None, beta = 2.5, sm_degree = 10, f
 
         logging.getLogger().info(f"Did {len(samples)} partitionning with chunks of size {chunk_size} among {len(organisms)} genomes in {round(time.time() - start_partitionning,2)} seconds.")
     else:
-        edges_weight, nb_fam = write_nem_input_files( tmpdir+"/"+str(cpt)+"/", organisms, sm_degree = sm_degree)
-        partitionning_results = run_partitioning( tmpdir+"/"+str(cpt)+"/", len(organisms), beta * (nb_fam/edges_weight), free_dispersion, K = K, seed = seed, init = init, keep_files=keep_tmp_files)
+        edges_weight, nb_fam, uniq_fams = write_nem_input_files( tmpdir+"/"+str(cpt)+"/", organisms, sm_degree = sm_degree)
+        partitionning_results = run_partitioning( tmpdir+"/"+str(cpt)+"/", len(organisms), beta * (nb_fam/edges_weight), free_dispersion, K = K, seed = seed, init = init, keep_files=keep_tmp_files, unique_families=uniq_fams)
         if partitionning_results == [{},None,None]:
             raise Exception("Statistical partitionning does not work on your data. This usually happens because you used very few (<15) genomes.")
         cpt+=1
