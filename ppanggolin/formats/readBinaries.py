@@ -13,8 +13,8 @@ import tables
 from ppanggolin.genome import Organism, Gene, RNA
 from ppanggolin.region import Spot
 
-def getNumberOfOrganisms(pangenome):
-    """ standalone function to get the number of organisms in a pangenome"""
+def getOrganismsNames(pangenome):
+    """ standalone function to get the organisms names in a pangenome"""
     if hasattr(pangenome,"file"):
         filename = pangenome.file
     else:
@@ -25,9 +25,9 @@ def getNumberOfOrganisms(pangenome):
     table = annotations.genes
     orgSet = set()
     for org in read_chunks(table, column = "organism"):
-        orgSet.add(org)
+        orgSet.add(org.decode())
     h5f.close()
-    return len(orgSet)
+    return orgSet
 
 def getStatus(pangenome, pangenomeFile):
     """

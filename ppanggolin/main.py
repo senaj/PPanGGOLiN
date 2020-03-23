@@ -147,7 +147,7 @@ def cmdLine():
         sys.exit(1)
 
     args = parser.parse_args()
-    if args.subcommand == "annotate":
+    if args.subcommand in ["annotate", "update"]:
         if args.fasta is None and args.anno is None:
             raise Exception( "You must provide at least a file with the --fasta option to annotate from sequences, or a file with the --gff option to load annotations from.")
     return args

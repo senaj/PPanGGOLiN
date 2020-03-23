@@ -53,7 +53,10 @@ def launch(args):
         clustering(pangenome, args.tmpdir, args.cpu, defrag=args.defrag)
         clust_time = time.time() - start_clust
 
+    start_writing = time.time()
     writePangenome(pangenome, filename, args.force)
+    writing_time = writing_time + time.time() - start_writing
+
     start_graph = time.time()
     computeNeighborsGraph(pangenome)
     graph_time = time.time() - start_graph
@@ -88,14 +91,14 @@ def launch(args):
     writeFlatFiles(pangenome, args.output, args.cpu, csv = True, genePA=True, gexf=True, light_gexf = True, projection=True, json = True, stats = True, partitions = True, regions = True, spots=True)
     desc_time = time.time() - start_desc
 
-    logging.getLogger().info(f"Annotation took : {round(annotime,2)} seconds")
-    logging.getLogger().info(f"Clustering took : {round(clust_time,2)} seconds")
-    logging.getLogger().info(f"Building the graph took : {round(graph_time,2)} seconds")
-    logging.getLogger().info(f"Partitionning the pangenome took : {round(part_time,2)} seconds")
-    logging.getLogger().info(f"Predicting RGP took : {round(regions_time,2)} seconds")
-    logging.getLogger().info(f"Gathering RGP into spots took : {round(spot_time,2)} seconds")
-    logging.getLogger().info(f"Writing the pangenome data in HDF5 took : {round(writing_time,2)} seconds")
-    logging.getLogger().info(f"Writing descriptive files for the pangenome took : {round(desc_time,2)} seconds")
+    logging.getLogger().info(f"Annotation : {round(annotime,2)} seconds")
+    logging.getLogger().info(f"Clustering : {round(clust_time,2)} seconds")
+    logging.getLogger().info(f"Building the graph : {round(graph_time,2)} seconds")
+    logging.getLogger().info(f"Partitionning the pangenome : {round(part_time,2)} seconds")
+    logging.getLogger().info(f"Predicting RGP : {round(regions_time,2)} seconds")
+    logging.getLogger().info(f"Gathering RGP into spots : {round(spot_time,2)} seconds")
+    logging.getLogger().info(f"Writing the pangenome data in HDF5 : {round(writing_time,2)} seconds")
+    logging.getLogger().info(f"Writing descriptive files for the pangenome : {round(desc_time,2)} seconds")
     printInfo(filename, content = True)
 
 

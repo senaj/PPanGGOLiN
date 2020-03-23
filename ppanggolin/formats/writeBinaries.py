@@ -76,8 +76,12 @@ def writeAnnotations(pangenome, h5f):
     """
         Function writing all of the pangenome's annotations
     """
-    annotation = h5f.create_group("/","annotations","Annotations of the pangenome's organisms")
-    geneTable = h5f.create_table(annotation, "genes", geneDesc(*getMaxLenAnnotations(pangenome)), expectedrows=len(pangenome.genes))
+    if '/annotations' not in h5f:#if it exists, this is an update operation.
+        annotation = h5f.create_group("/","annotations","Annotations of the pangenome's organisms")
+        geneTable = h5f.create_table(annotation, "genes", geneDesc(*getMaxLenAnnotations(pangenome)), expectedrows=len(pangenome.genes))
+    else:
+        geneTable = h5f.root.annotations.genes
+
     nbRNA = 0
     for org in pangenome.organisms:
         for contig in org.contigs:
@@ -139,7 +143,10 @@ def geneSequenceDesc(geneIDLen, geneSeqLen, geneTypeLen):
     }
 
 def writeGeneSequences(pangenome, h5f):
-    geneSeq = h5f.create_table("/","geneSequences", geneSequenceDesc(*getGeneSequencesLen(pangenome)), expectedrows=len(pangenome.genes))
+    if '/geneSequences' not in h5f: 
+        geneSeq = h5f.create_table("/","geneSequences", geneSequenceDesc(*getGeneSequencesLen(pangenome)), expectedrows=len(pangenome.genes))
+    else:
+        geneSeq = h5f.root.geneSequences
     geneRow = geneSeq.row
     bar = tqdm(pangenome.genes, unit = "gene")
     for gene in bar:
@@ -323,7 +330,6 @@ def writeSpots(pangenome, h5f, force):
     bar.close()
     SpoTable.flush()
 
-
 def writeStatus(pangenome, h5f):
     if "/status" in h5f:#if statuses are already written
         statusGroup = h5f.root.status
@@ -475,19 +481,15 @@ def writePangenome(pangenome, filename, force):
     """
 
     compressionFilter = tables.Filters(complevel=1, complib='blosc:lz4')#test the other compressors from blosc, this one was arbitrarily chosen.
+    h5f = tables.open_file(filename,"a", filters=compressionFilter)
     if pangenome.status["genomesAnnotated"] == "Computed":
-        h5f = tables.open_file(filename,"w", filters=compressionFilter)
         logging.getLogger().info("Writing genome annotations...")
         writeAnnotations(pangenome, h5f)
         pangenome.status["genomesAnnotated"] = "Loaded"
-        h5f.close()
     elif pangenome.status["genomesAnnotated"] in ["Loaded", "inFile"]:
         pass
     else:#if the pangenome is not Computed not Loaded, it's probably not really in a good state ( or something new was coded).
         raise NotImplementedError("Something REALLY unexpected and unplanned for happened here. Please post an issue on github with what you did to reach this error.")
-
-    #from there, appending to existing file.
-    h5f = tables.open_file(filename,"a", filters=compressionFilter)
 
     if pangenome.status["geneSequences"] == "Computed":
         logging.getLogger().info("writing the protein coding gene dna sequences")
