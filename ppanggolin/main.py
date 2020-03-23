@@ -26,6 +26,7 @@ import ppanggolin.annotate
 import ppanggolin.cluster
 import ppanggolin.workflow.workflow
 import ppanggolin.workflow.panRGP
+import ppanggolin.workflow.update
 import ppanggolin.figures
 import ppanggolin.formats
 import ppanggolin.info
@@ -94,6 +95,7 @@ def cmdLine():
     desc += "    graph         Create the pangenome graph\n"
     desc += "    partition     Partition the pangenome graph\n"
     desc += "    rarefaction   Compute the rarefaction curve of the pangenome\n"
+    desc += "    update        Add genomes to a formerly computed pangenome\n"
     desc += "  \n"
     desc += "  Output:\n"
     desc += "    draw          Draw figures representing the pangenome through different aspects\n"
@@ -118,6 +120,7 @@ def cmdLine():
     subs.append(ppanggolin.nem.rarefaction.rarefactionSubparser(subparsers))
     subs.append(ppanggolin.workflow.workflow.workflowSubparser(subparsers))
     subs.append(ppanggolin.workflow.panRGP.panRGPSubparser(subparsers))
+    subs.append(ppanggolin.workflow.update.updateSubparser(subparsers))
     subs.append(ppanggolin.figures.figureSubparser(subparsers))
     subs.append(ppanggolin.formats.writeFlat.writeFlatSubparser(subparsers))
     subs.append(ppanggolin.align.alignSubparser(subparsers))
@@ -208,6 +211,8 @@ def main():
         ppanggolin.RGP.spot.launch(args)
     elif args.subcommand == "panrgp":
         ppanggolin.workflow.panRGP.launch(args)
+    elif args.subcommand == "update":
+        ppanggolin.workflow.update.launch(args)
 
     if hasattr(args,"memory") and args.memory is not None:
         p.terminate()
