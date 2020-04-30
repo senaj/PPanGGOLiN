@@ -5,10 +5,14 @@ Developper doc
 This part of the documentation is made for people that want to use PPanGGOLiN as a python library, or for those that need to maintain the package or want to modify it.
 
 If you were looking for the command line tool documentation of PPanGGOLiN, you should check the github wiki instead.
+
 Subpackages
 -----------
 
+There is a ppanggolin subpackage for each specific step of the analysis. Each subpackage is associated to one or more subcommand.
+
 .. toctree::
+   :maxdepth: 1
 
    ppanggolin.RGP
    ppanggolin.align
@@ -24,29 +28,14 @@ Subpackages
 Submodules
 ----------
 
-The ``Pangenome`` class
------------------------
+Submodules includes all of the basic classes of PPanGGOLiN that will be used by the subpackages.
 
-.. autoclass:: ppanggolin.pangenome.Pangenome
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. toctree::
+   :maxdepth: 2
 
-The ``Edge`` class
-------------------
-
-.. autoclass:: ppanggolin.pangenome.Edge
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-The ``GeneFamily`` class
-------------------------
-
-.. autoclass:: ppanggolin.geneFamily.GeneFamily
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   classes/pangenome
+   classes/edge
+   classes/geneFamily
 
 ppanggolin.genome module
 ------------------------

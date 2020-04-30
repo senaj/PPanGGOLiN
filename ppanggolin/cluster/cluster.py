@@ -40,7 +40,7 @@ def firstClustering(sequences, tmpdir, cpu, code, coverage, identity ):
     seqNucdb = tmpdir.name + '/nucleotid_sequences_db'
     cmd = ["mmseqs","createdb"]
     cmd.append(sequences.name)
-    cmd.extend([seqNucdb,"--dont-shuffle","false"])
+    cmd.extend([seqNucdb])
     logging.getLogger().debug(" ".join(cmd))
     logging.getLogger().info("Creating sequence database...")
     subprocess.run(cmd, stdout=subprocess.DEVNULL, check=True)
@@ -117,7 +117,7 @@ def refineClustering(tsv, alnFile, fam2seq):
         if choice[0] is not None:
             genestochange = fam2genes[node]
             for gene in genestochange:
-                genes2fam[gene] = (choice[0], "F")
+                genes2fam[gene] = (choice[0], True)
                 fam2genes[choice[0]].add(gene)
             del fam2genes[node]
     newFam2seq = {}
@@ -238,24 +238,28 @@ def readClustering(pangenome, families_tsv_file, infer_singletons=False, force=F
     nbGeneWtFam = 0
     localDict = mkLocal2Gene(pangenome)
     bar = tqdm(total = filesize, unit = "bytes")
+    lineCounter = 0
     for line in families_tsv_file:
+        lineCounter+=1
         bar.update(len(line))
-        elements = [el.strip() for el in line.split()] # 2 or 3 fields expected
-        if len(elements)<=1:
-            logging.getLogger().error("No tabulation separator found in gene families file")
-            exit(1)
-        (fam_id, gene_id, is_frag) = elements if len(elements) == 3 else elements+[None]
         try:
-            geneObj = pangenome.getGene(gene_id)
-        except KeyError:
-            geneObj = localDict.get(gene_id)
-            if geneObj is not None:
-                nbGeneWtFam+=1
-                fam = pangenome.addGeneFamily(fam_id)
-                geneObj.is_fragment =  True if is_frag == "F" else False
-                fam.addGene(geneObj)
-        if is_frag == "F":
-            frag=True
+            elements = [el.strip() for el in line.split()] # 2 or 3 fields expected
+            if len(elements)<=1:
+                raise ValueError("No tabulation separator found in gene families file")
+            (fam_id, gene_id, is_frag) = elements if len(elements) == 3 else elements+[None]
+            try:
+                geneObj = pangenome.getGene(gene_id)
+            except KeyError:
+                geneObj = localDict.get(gene_id)
+                if geneObj is not None:
+                    nbGeneWtFam+=1
+                    fam = pangenome.addGeneFamily(fam_id)
+                    geneObj.is_fragment =  True if is_frag == "F" else False
+                    fam.addGene(geneObj)
+            if is_frag == "F":
+                frag=True
+        except:
+            raise Exception(f"line {lineCounter} of the file '{families_tsv_file.name}' raised an error.")
     bar.close()
     families_tsv_file.close()
     if nbGeneWtFam < len(pangenome.genes):#not all genes have an associated cluster
@@ -265,7 +269,7 @@ def readClustering(pangenome, families_tsv_file, infer_singletons=False, force=F
             if infer_singletons:
                 inferSingletons(pangenome)
             else:
-                raise Exception("Some genes did not have an associated cluster. Either change your cluster file so that each gene has a cluster, or use the --infer_singletons option to infer a cluster for each non-clustered gene.")
+                raise Exception(f"Some genes ({nbGeneWtFam}) did not have an associated cluster. Either change your cluster file so that each gene has a cluster, or use the --infer_singletons option to infer a cluster for each non-clustered gene.")
     pangenome.status["genesClustered"] = "Computed"
     if frag:#if there was fragment informations in the file.
         pangenome.status["defragmented"] = "Computed"
