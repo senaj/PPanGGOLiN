@@ -379,7 +379,7 @@ def writeInfo(pangenome, h5f):
                 return round(statistics.mean(arg),2)
 
         def getstdev(arg):
-            if len(arg) == 0:
+            if len(arg) < 2:
                 return 0
             else:
                 return round(statistics.stdev(arg),2)
