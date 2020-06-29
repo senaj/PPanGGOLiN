@@ -341,6 +341,7 @@ def readAnnotations(pangenome, organisms_file, cpu, getSeq = True, pseudo = Fals
     pangenome.status["genomesAnnotated"] = "Computed"
     pangenome.parameters["annotation"] = {}
     pangenome.parameters["annotation"]["read_annotations_from_file"] = True
+    pangenome.parameters["annotation"]["use_pseudo"] = pseudo
 
 def getGeneSequencesFromFastas(pangenome, fasta_file):
     fastaDict = {}
