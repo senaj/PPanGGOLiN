@@ -50,9 +50,14 @@ def launch(args):
     #annotate the new genomes and add them to the pangenome
     if args.fasta is not None:
         start_anno = time.time()
-        annotatePangenome(pangenome, args.fasta, args.tmpdir, args.cpu, translation_table=pangenome.parameters["annotation"]["translation_table"], kingdom=pangenome.parameters["annotation"]["kingdom"], norna= not pangenome.parameters["annotation"]["annotate_RNA"], overlap = pangenome.parameters["annotation"]["remove_Overlapping_CDS"])
+        #to cope with old pangenomes that did not have this option
+        contig_filter = pangenome.parameters["annotation"].get("contig_filter")
+        if contig_filter is None:
+            contig_filter = 0
+
+        annotatePangenome(pangenome, args.fasta, args.tmpdir, args.cpu, translation_table=pangenome.parameters["annotation"]["translation_table"], kingdom=pangenome.parameters["annotation"]["kingdom"], norna= not pangenome.parameters["annotation"]["annotate_RNA"], overlap = pangenome.parameters["annotation"]["remove_Overlapping_CDS"], contig_filter = contig_filter)
         annotime = time.time() - start_anno
-    
+
     if args.anno is not None:
         raise NotImplementedError()
 

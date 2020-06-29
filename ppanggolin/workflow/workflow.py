@@ -26,7 +26,7 @@ def launch(args):
         getSeq = True
         if args.clusters is not None:
             getSeq = False
-        readAnnotations(pangenome, args.anno, cpu = args.cpu, getSeq = getSeq)
+        readAnnotations(pangenome, args.anno, cpu = args.cpu, getSeq = getSeq, pseudo=args.use_pseudo)
         writePangenome(pangenome, filename, args.force)
         if args.clusters is None and pangenome.status["geneSequences"] == "No" and args.fasta is None:
             raise Exception("The gff/gbff provided did not have any sequence informations, you did not provide clusters and you did not provide fasta file. Thus, we do not have the information we need to continue the analysis.")
@@ -41,7 +41,7 @@ def launch(args):
             clustering(pangenome, tmpdir = args.tmpdir, cpu = args.cpu, defrag = args.defrag)
     elif args.fasta is not None:
         pangenome = Pangenome()
-        annotatePangenome(pangenome, args.fasta, args.tmpdir, args.cpu)
+        annotatePangenome(pangenome, args.fasta, args.tmpdir, args.cpu, contig_filter=args.contig_filter)
         writePangenome(pangenome, filename, args.force)
         clustering(pangenome, tmpdir = args.tmpdir,cpu = args.cpu, defrag = args.defrag)
 
@@ -75,4 +75,6 @@ def workflowSubparser(subparser):
     optional.add_argument("--rarefaction", required=False, action = "store_true", help = "Use to compute the rarefaction curves (WARNING: can be time consumming)")
     optional.add_argument("-K","--nb_of_partitions",required=False, default=-1, type=int, help = "Number of partitions to use. Must be at least 3. If under 3, it will be detected automatically.")
     optional.add_argument("--defrag",required=False, action="store_true", help = "Realign gene families to associated fragments with their non-fragmented gene family.")
+    optional.add_argument("--use_pseudo",required=False, action="store_true",help = "In the context of provided annotation, use this option to use pseudogenes. (Default behavior is to ignore them)")
+    optional.add_argument("--contig_filter",required=False, default=0, type=int, help = "remove contigs that are smaller than this length")
     return parser
